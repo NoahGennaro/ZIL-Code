@@ -1,4 +1,4 @@
-"Cloak of Darkness main file"
+"The Victorian House"
 
 <VERSION ZIP>
 <CONSTANT RELEASEID 1>
@@ -6,16 +6,13 @@
 "Main loop"
 
 <CONSTANT GAME-BANNER
-"Cloak of Darkness|
-A basic IF demonstration.|
-Original game by Roger Firth|
-ZIL conversion by Jesse McGrew, Jayson Smith, and Josh Lawrence">
+"The Victorian House|
+A basic IF Practice.|
+Original game by Noah Gennaro">
 
 <ROUTINE GO ()
     <CRLF> <CRLF>
-    <TELL "Hurrying through the rainswept November night, you're glad to see the
-bright lights of the Opera House. It's surprising that there aren't more
-people about but, hey, what do you expect in a cheap demo game...?" CR CR>
+    <TELL "____________________________________" CR CR>
     <INIT-STATUS-LINE>
     <V-VERSION> <CRLF>
     <SETG HERE ,FOYER>
@@ -27,79 +24,108 @@ people about but, hey, what do you expect in a cheap demo game...?" CR CR>
 
 "Objects"
 
-<OBJECT CLOAK
-    (DESC "cloak")
-    (SYNONYM CLOAK)
-    (IN PLAYER)
-    (FLAGS TAKEBIT WEARBIT WORNBIT)
-    (ACTION CLOAK-R)>
+;Basic Room Definition
+;CEXIT, UEXIT, NEXIT, DEXIT, and FEXIT (denoted by PER) demonstrated
 
-<ROUTINE CLOAK-R ()
-    <COND (<VERB? EXAMINE> <TELL "The cloak is unnaturally dark." CR>)>>
+<ROOM LIVING-ROOM
+	(LOC ROOMS)
+	(DESC "Living Room")
+	(EAST TO KITCHEN)
+	(WEST TO STRANGE-PASSAGE IF CYCLOPS-FLED ELSE
+		"The wooden door is nailed shut.")
+	(DOWN PER TRAP-DOOR-EXIT)
+	(UP SORRY "There isn't anything up there.")
+	(ACTION LIVING-ROOM-F)
+	(FLAGS RLANDBIT ONBIT SACREDBIT)
+	(GLOBAL STAIRS)
+	(THINGS <> NAILS NAILS-PSEUDO)>
 
-<ROOM FOYER
-    (DESC "Foyer of the Opera House")
-    (IN ROOMS)
-    (LDESC "You are standing in a spacious hall, splendidly decorated in red
-and gold, with glittering chandeliers overhead. The entrance from
-the street is to the north, and there are doorways south and west.")
-    (SOUTH TO BAR)
-    (WEST TO CLOAKROOM)
-    (NORTH SORRY "You've only just arrived, and besides, the weather outside
-seems to be getting worse.")
-    (FLAGS LIGHTBIT)>
+	
 
-<ROOM BAR
-    (DESC "Foyer Bar")
-    (IN ROOMS)
-    (LDESC "The bar, much rougher than you'd have guessed after the opulence
-of the foyer to the north, is completely empty.")
-    (NORTH TO FOYER)
-    (ACTION BAR-R)>
+;Basic Object Definition
+;DESC, FDESC, AND LDESC
 
-<GLOBAL DISTURBED 0>
+<OBJECT LANTERN
+	(LOC LIVING-ROOM)
+	(SYNONYM LAMP LANTERN LIGHT)
+	(ADJECTIVE BRASS)
+	(DESC "brass lantern")
+	(FLAGS TAKEBIT LIGHTBIT)
+	(ACTION LANTERN-F)
+	(FDESC "A battery-powered lantern is on the trophy case.")
+	(LDESC "There is a battery-powered lantern here.")
+	(SIZE 15)>
 
-<ROUTINE BAR-R (RARG)
-    <COND
-        (<==? .RARG ,M-ENTER>
-            <COND (<FSET? ,CLOAK ,WORNBIT> <FCLEAR ,BAR ,LIGHTBIT>)
-                (ELSE <FSET ,BAR ,LIGHTBIT>)>)
-        (<==? .RARG ,M-BEG>
-            <COND (<AND <NOT <FSET? ,BAR ,LIGHTBIT>>
-                        <NOT <GAME-VERB?>>
-                        <NOT <VERB? LOOK>>
-                        <NOT <AND <VERB? WALK> <==? ,PRSO ,P?NORTH>>>>
-                            <TELL "You grope around clumsily in the dark. Better be careful." CR>
-                            <SETG DISTURBED <+ ,DISTURBED 1>>)>)>>
 
-<OBJECT MESSAGE
-    (DESC "message")
-    (SYNONYM MESSAGE FLOOR SAWDUST DUST)
-    (ADJECTIVE SCRAWLED)
-    (IN BAR)
-    (FDESC "There seems to be some sort of message scrawled in the sawdust on the floor.")
-    (ACTION MESSAGE-R)>
 
-<ROUTINE MESSAGE-R ()
-    <COND (<VERB? EXAMINE READ>
-            <TELL "The message simply reads: \"You ">
-            <COND (<G? ,DISTURBED 1> <TELL "lose.">)
-                (ELSE <TELL "win.">)>
-            <TELL "\"" CR>
-            <V-QUIT>)>>
 
-<ROOM CLOAKROOM
-    (DESC "Cloakroom")
-    (IN ROOMS)
-    (LDESC "The walls of this small room were clearly once lined with hooks,
-though now only one remains. The exit is a door to the east.")
-    (EAST TO FOYER)
-    (FLAGS LIGHTBIT)>
+;Basic Routine Example
 
-<OBJECT HOOK
-    (DESC "small brass hook")
-    (IN CLOAKROOM)
-    (SYNONYM HOOK PEG)
-    (ADJECTIVE SMALL BRASS)
-    (FDESC "A small brass hook is on the wall.")
-    (FLAGS CONTBIT SURFACEBIT)>
+<ROUTINE INCREMEMNT-SCORE (NUM)
+	<SETG SCORE <+ ,SCORE .NUM>>
+	<ROUTINE-B>
+	<COND (,SCORE-NOTIFICATION-ON
+		<TELL "[Your score has just gone up by " N .NUM ".]" CR>)>>
+
+
+;"AUX" before an argument means it is not passed, but used locally
+;"OPT" means optional arugment, can be passed bu doesn't have to be
+; must be written in this order: passed, optional, and aux
+
+
+
+;Conditional Examples
+
+<ROUTINE FIND-FOOD ("AUX" FOOD)
+	<COND (<IN? ,HAM-SANDWICH ,HERE>
+			<SET FOOD ,HAM-SANDWICH>)
+		  (<IN? ,CANDY-BAR ,HERE>
+			<SET FOOD ,CANDY-BAR>)
+		  (T
+		   <SET FOOD <>)>
+	.FOOD>
+
+
+
+
+;can use <RTRUE> and <RFALSE> to force returning, and not complete
+;rest of the function. Can also force return with <RETURN ,VAR>
+
+
+;Action Routine Example
+
+<ROUTINE CANDY-F ()
+	<COND (<VERB? EAT>
+		   <REMOVE ,CANDY>
+		   <TELL "Yummy candy." CR>)
+		   (<VERB? CUT-OPEN>
+		   <FSET ,CANDY ,OPENBIT>
+		   <MOVE ,CANDY-PIT ,CANDY>
+		   <TELL "Here is a candy pit." CR>)>>
+
+;FCLEAR and FSET to set and clear BITS
+
+
+
+;,HERE is local variable used to hold current room
+; <EQUAL? .... sees if two objects the same
+; can have mutliple subsequent variables to compare it against
+; ex...
+
+<COND (<IS-OTTO-ON-ELBA?>
+      <TEll "He is on Elba." CR>)>
+
+<ROUTINE IS-OTTO-ON-ELBA? ()
+	<COND (<EQUAL? <LOC ,UNCLE-OTTO> ,PARIS ,WATERLOO>
+		  <RTRUE>)
+		   (T
+		   <RFALSE>)>>
+	
+
+;all global variables, objects, and room names started with comma
+;local variables begin with period
+
+
+
+
+
